@@ -9,7 +9,7 @@ import {
   SendMode,
 } from "@ton/core";
 
-import { OpRouter } from "./Constants";
+import { AytuRouterOp } from "./Constants";
 
 type TempUpgrade = {
   endCode: number;
@@ -51,7 +51,7 @@ export class Router implements Contract {
   constructor(
     readonly address: Address,
     readonly init?: { code: Cell; data: Cell }
-  ) {}
+  ) { }
 
   static createFromAddress(address: Address) {
     return new Router(address);
@@ -85,7 +85,7 @@ export class Router implements Contract {
     queryId: number
   ) => {
     let body = beginCell()
-      .storeUint(OpRouter.swap_ton_for_jetton, 32)
+      .storeUint(AytuRouterOp.swap_ton_for_jetton, 32)
       .storeUint(queryId, 64)
       .storeCoins(tonAmount)
       .storeAddress(tokenWallet1)

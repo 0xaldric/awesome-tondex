@@ -9,7 +9,7 @@ import {
 import { DEX, pTON } from "@ston-fi/sdk";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 import path from "path";
-import { Router } from "./RouterAytu";
+import { Router } from "./src/web3/aytu/Router";
 
 const tonClient = new TonClient({
   endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
