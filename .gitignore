@@ -108,3 +108,4 @@ src/blockchain/test.ts
 .docker/*
 
 mnemonics.txt
+swapResults.csv

@@ -3,13 +3,14 @@ import { JettonWallet, TransferMessageParams } from "@/web3/jetton/JettonWallet"
 import { StonFiOp } from "@/web3/stonfi/Constants";
 import { getWallet } from "@/web3/wallet";
 import { beginCell, internal, toNano } from "@ton/core";
+import { scanTx } from "./tx-scanner";
 
 export async function stonfiBuy(buyAmount = toNano(0.1)) {
 
     const { keyPair, walletContract } = await getWallet();
 
     const queryId = Date.now();
-    const forwardTonAmount = toNano(0.1)
+    const forwardTonAmount = toNano(0.2)
 
     const forwardPayload = beginCell()
         .storeUint(StonFiOp.swap, 32)
@@ -46,4 +47,8 @@ export async function stonfiBuy(buyAmount = toNano(0.1)) {
         secretKey: keyPair.secretKey,
         messages: [message]
     });
+
+    console.log('Ston.fi buy sent!')
+
+    return await scanTx(walletContract.address, queryId);
 }

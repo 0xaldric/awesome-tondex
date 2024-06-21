@@ -2,13 +2,14 @@ import { DEDUST_NATIVE_VAULT_ADDRESS, DEDUST_QUOTE_POOL_ADDRESS } from "@/consta
 import { SwapToJettonParams, VaultNative } from "@/web3/dedust/vault";
 import { getWallet } from "@/web3/wallet";
 import { internal, toNano } from "@ton/core";
+import { scanTx } from "./tx-scanner";
 
 export async function dedustBuy(buyAmount = toNano(0.1)) {
 
     const { keyPair, walletContract } = await getWallet();
 
     const queryId = Date.now();
-    const forwardTonAmount = toNano(0.1)
+    const forwardTonAmount = toNano(0.2)
 
     const swapParams: SwapToJettonParams = {
         queryId,
@@ -32,4 +33,7 @@ export async function dedustBuy(buyAmount = toNano(0.1)) {
         secretKey: keyPair.secretKey,
         messages: [message]
     });
+
+    console.log('DeDust buy sent!')
+    return await scanTx(walletContract.address, queryId);
 }

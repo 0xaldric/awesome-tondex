@@ -7,12 +7,16 @@ const MAX_ATTEMPS = 50;
 export async function scanTx(account: Address, queryId: number) {
     let trial = 0;
     while (trial < MAX_ATTEMPS) {
-        const tx = (await tonHttpClient.getTransactions(account, { limit: 1 })).at(0)
-        if (tx) {
-            const txHash = processTx(tx, queryId);
-            if (txHash) {
-                return txHash;
+        try {
+            const tx = (await tonHttpClient.getTransactions(account, { limit: 1 })).at(0)
+            if (tx) {
+                const txHash = processTx(tx, queryId);
+                if (txHash) {
+                    return txHash;
+                }
             }
+        } catch (err) {
+            console.log(`Error fetching tx: ${(err as Error).message}`)
         }
         trial++;
         await sleep(BLOCK_TIME);
@@ -25,12 +29,13 @@ export function processTx(tx: Transaction, expectedQueryId: number) {
     for (const msg of outMsgs) {
         try {
             const body = msg.body.beginParse();
+            body.loadUint(32);
             const queryId = body.loadUint(64);
+            console.log(queryId, expectedQueryId);
             if (queryId === expectedQueryId) {
                 return tx.hash().toString("hex");
             }
         } catch (err) {
-
         }
     }
     return undefined;

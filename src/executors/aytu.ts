@@ -3,9 +3,10 @@ import { Router } from "@/web3/aytu/Router";
 import { SwapToJettonParams, VaultNative } from "@/web3/dedust/vault";
 import tonHttpClient from "@/web3/ton-connect/http-client";
 import { getWallet } from "@/web3/wallet";
-import { internal, toNano } from "@ton/core";
+import { toNano } from "@ton/core";
+import { scanTx } from "./tx-scanner";
 
-export async function dedustBuy(buyAmount = toNano(0.1)) {
+export async function aytuBuy(buyAmount = toNano(0.1)) {
 
     const { keyPair, walletContract } = await getWallet();
 
@@ -25,4 +26,7 @@ export async function dedustBuy(buyAmount = toNano(0.1)) {
         null,
         queryId
     )
+
+    console.log('Aytu buy sent!')
+    return await scanTx(walletContract.address, queryId);
 }
