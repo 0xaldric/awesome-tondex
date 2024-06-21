@@ -108,4 +108,8 @@ src/blockchain/test.ts
 .docker/*
 
 mnemonics.txt
-swapResults.csv
+results.csv
+aytu-txs.json
+dedust-txs.json
+stonfi-txs.json
+lite-client-configs.json

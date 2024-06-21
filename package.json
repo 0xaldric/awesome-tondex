@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "index": "npx ts-node-dev -r tsconfig-paths/register src/index.ts"
+    "send-swaps": "npx ts-node-dev -r tsconfig-paths/register src/scripts/send-swaps.ts",
+    "scan-txs": "npx ts-node-dev -r tsconfig-paths/register src/scripts/scan-txs.ts",
+    "crawl-durations": "npx ts-node-dev -r tsconfig-paths/register src/scripts/crawl-durations.ts"
   },
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
@@ -9,12 +11,18 @@
     "@ton/core": "^0.56.3",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.11.2",
+    "axios": "^1.7.2",
+    "cheerio": "^1.0.0-rc.12",
+    "csv-parse": "^5.5.6",
     "dotenv": "^16.4.5",
     "fs": "^0.0.1-security",
     "joi": "^17.13.3",
-    "path": "^0.12.7"
+    "lodash": "^4.17.21",
+    "path": "^0.12.7",
+    "ton-lite-client": "^3.0.0"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.5",
     "@types/node": "^20.14.6",
     "tsconfig-paths": "^4.2.0"
   }

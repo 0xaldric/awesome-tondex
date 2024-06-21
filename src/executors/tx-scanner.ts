@@ -1,42 +1,50 @@
-import { sleep } from "@/utils";
-import tonHttpClient from "@/web3/ton-connect/http-client";
-import { Address, Transaction } from "@ton/core";
+import {
+    tonLiteClient
+} from "@/web3/ton-connect/ton-lite-client";
+import { Address, Cell, Message, Transaction, loadTransaction } from "@ton/core";
 
-const BLOCK_TIME = 3000;
-const MAX_ATTEMPS = 50;
-export async function scanTx(account: Address, queryId: number) {
-    let trial = 0;
-    while (trial < MAX_ATTEMPS) {
+export async function scanTxHashes(account: Address, extractor: (msg: Message) => boolean) {
+    let txHashes: string[] = [];
+    const info = await tonLiteClient.getMasterchainInfo();
+    const accountState = await tonLiteClient.getAccountState(account, info.last)
+    let lt = accountState.lastTx!.lt.toString();
+    let hash = Buffer.from(accountState.lastTx!.hash.toString(16).padStart(64, "0"), "hex");
+    for (let i = 0; i < 200; i++) {
         try {
-            const tx = (await tonHttpClient.getTransactions(account, { limit: 1 })).at(0)
-            if (tx) {
-                const txHash = processTx(tx, queryId);
-                if (txHash) {
-                    return txHash;
-                }
+            const txs = await tonLiteClient.getAccountTransactions(account, lt, hash, 16);
+
+            const parsedTxs = Cell.fromBoc(txs.transactions).map(tx => loadTransaction(tx.beginParse()))
+
+            const newTxHashes = extractTxHashes(parsedTxs, extractor)
+            console.log(newTxHashes);
+            txHashes = [...txHashes, ...newTxHashes];
+
+            const txLength = parsedTxs.length;
+            if (txLength > 0) {
+                const lastTx = parsedTxs[txLength - 1];
+                lt = lastTx.lt.toString();
+                hash = lastTx.hash();
+            }
+            else {
+                break;
             }
         } catch (err) {
             console.log(`Error fetching tx: ${(err as Error).message}`)
         }
-        trial++;
-        await sleep(BLOCK_TIME);
     }
-    return undefined;
+
+    return Array.from(new Set(txHashes));
 }
 
-export function processTx(tx: Transaction, expectedQueryId: number) {
-    const outMsgs = tx.outMessages.values();
-    for (const msg of outMsgs) {
-        try {
-            const body = msg.body.beginParse();
-            body.loadUint(32);
-            const queryId = body.loadUint(64);
-            console.log(queryId, expectedQueryId);
-            if (queryId === expectedQueryId) {
-                return tx.hash().toString("hex");
+export function extractTxHashes(txs: Transaction[], extractor: (msg: Message) => boolean): string[] {
+    let txHashes = [];
+    for (const tx of txs) {
+        for (const msg of tx.outMessages.values()) {
+            if (extractor(msg)) {
+                txHashes.push(tx.hash().toString('hex'));
+                break;
             }
-        } catch (err) {
         }
     }
-    return undefined;
+    return txHashes;
 }

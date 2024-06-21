@@ -7,7 +7,9 @@ const envVarsSchema = Joi.object()
     .keys({
         TON_HTTP_ENDPOINT: Joi.string().required(),
         TON_HTTP_API_KEY: Joi.string().required(),
-        WALLET_MNEMONIC: Joi.string().required()
+        WALLET1_MNEMONIC: Joi.string().required(),
+        WALLET2_MNEMONIC: Joi.string().required(),
+        WALLET3_MNEMONIC: Joi.string().required()
     })
     .unknown();
 
@@ -20,5 +22,9 @@ if (error != null) {
 export const env = {
     tonHttpEndpoint: envVars.TON_HTTP_ENDPOINT,
     tonHttpApiKey: envVars.TON_HTTP_API_KEY,
-    walletMnemonic: envVars.WALLET_MNEMONIC
+    walletMnemonic: [
+        envVars.WALLET1_MNEMONIC,
+        envVars.WALLET2_MNEMONIC,
+        envVars.WALLET3_MNEMONIC
+    ]
 };
