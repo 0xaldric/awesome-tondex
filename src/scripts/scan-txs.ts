@@ -1,19 +1,37 @@
 import { isAytuBuy } from "@/executors/aytu";
 import { isDeDustBuy } from "@/executors/dedust";
 import { isStonFiBuy } from "@/executors/stonfi";
-import { scanTxHashes } from "@/executors/tx-scanner";
+import { scanTxs } from "@/executors/tx-scanner";
 import { getWallet } from "@/web3/wallet";
+import { Transaction } from "@ton/core";
 import { writeFile } from "fs";
 
+const explorerLink = 'https://testnet.tonviewer.com/transaction/'
+
+export type TxInfo = {
+    txLink: string,
+    timestamp: number
+}
+
+function txToTxInfo(tx: Transaction) {
+    const hash = tx.hash().toString('hex');
+    const txLink = `${explorerLink}${hash}`
+    const timestamp = tx.now;
+
+    return {
+        txLink, timestamp
+    }
+}
+
+
 async function main() {
-    const explorerLink = 'https://testnet.tonviewer.com/transaction/'
+
     const { walletContract: aytuWallet } = await getWallet(0);
 
-    const aytuTxHashes = await scanTxHashes(aytuWallet.address, isAytuBuy);
-    console.log(aytuTxHashes.length)
+    const aytuTxs = await scanTxs(aytuWallet.address, isAytuBuy);
 
-    const aytuTxLinks = aytuTxHashes.map(hash => `${explorerLink}${hash}`)
-    writeFile('aytu-txs.json', JSON.stringify(aytuTxLinks), (err) => {
+    const aytuTxInfo = aytuTxs.map(txToTxInfo)
+    writeFile('aytu-txs.json', JSON.stringify(aytuTxInfo), (err) => {
         if (err) {
             console.error('Error writing to file', err);
         } else {
@@ -22,11 +40,11 @@ async function main() {
     })
 
     const { walletContract: dedustWallet } = await getWallet(1);
-    const dedustTxHashes = await scanTxHashes(dedustWallet.address, isDeDustBuy);
-    console.log(dedustTxHashes.length)
+    const dedustTxs = await scanTxs(dedustWallet.address, isDeDustBuy);
 
-    const dedustTxLinks = dedustTxHashes.map(hash => `${explorerLink}${hash}`)
-    writeFile('dedust-txs.json', JSON.stringify(dedustTxLinks), (err) => {
+    const dedustTxInfo = dedustTxs.map(txToTxInfo);
+
+    writeFile('dedust-txs.json', JSON.stringify(dedustTxInfo), (err) => {
         if (err) {
             console.error('Error writing to file', err);
         } else {
@@ -35,11 +53,11 @@ async function main() {
     })
 
     const { walletContract: stonfiWallet } = await getWallet(2);
-    const stonfiTxHashes = await scanTxHashes(stonfiWallet.address, isStonFiBuy);
-    console.log(stonfiTxHashes.length)
+    const stonfiTxs = await scanTxs(stonfiWallet.address, isStonFiBuy);
 
-    const stonfiTxLinks = stonfiTxHashes.map(hash => `${explorerLink}${hash}`)
-    writeFile('stonfi-txs.json', JSON.stringify(stonfiTxLinks), (err) => {
+    const stonfiTxInfo = stonfiTxs.map(txToTxInfo);
+
+    writeFile('stonfi-txs.json', JSON.stringify(stonfiTxInfo), (err) => {
         if (err) {
             console.error('Error writing to file', err);
         } else {

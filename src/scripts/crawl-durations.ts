@@ -8,11 +8,13 @@ import aytuTxs from 'root/aytu-txs.json';
 import dedustTxs from 'root/dedust-txs.json';
 import stonfiTxs from 'root/stonfi-txs.json';
 import { sleep } from "@/utils";
+import { TxInfo } from "./scan-txs";
 
 type Dex = 'STON.FI' | 'DEDUST' | 'AYTU'
 export interface SwapResult {
     dex: Dex,
     txLink: string,
+    timestamp: number,
     duration: number
 }
 
@@ -43,7 +45,7 @@ function convertToSeconds(duration: string) {
 function appendSwapResults(swapResults: SwapResult[]): void {
     const fileExists = fs.existsSync(csvFilePath);
 
-    const header = 'DEX,Tx Link,Duration';
+    const header = 'DEX,Tx Link,Duration,Timestamp';
     let dataToWrite = '';
 
     if (!fileExists) {
@@ -51,7 +53,7 @@ function appendSwapResults(swapResults: SwapResult[]): void {
     }
 
     swapResults.forEach(result => {
-        const record = `${result.dex},${result.txLink},${result.duration}`;
+        const record = `${result.dex},${result.txLink},${result.duration},${result.timestamp}`;
         dataToWrite += record + os.EOL;
     });
 
@@ -59,8 +61,8 @@ function appendSwapResults(swapResults: SwapResult[]): void {
     console.log(`Records added: ${swapResults.length}`);
 }
 
-async function crawler(url: string, dex: Dex): Promise<SwapResult | undefined> {
-    const response = await axios.get(url);
+async function crawler(dex: Dex, txInfo: TxInfo): Promise<SwapResult | undefined> {
+    const response = await axios.get(txInfo.txLink);
 
     // Load the HTML content into Cheerio
     const $ = cheerio.load(response.data);
@@ -75,44 +77,44 @@ async function crawler(url: string, dex: Dex): Promise<SwapResult | undefined> {
     if (match && match[1]) {
         const duration = convertToSeconds(match[1]);
         return {
-            txLink: url,
+            ...txInfo,
             dex,
             duration,
         };
     } else {
-        console.log("Duration not found", url);
+        console.log("Duration not found", txInfo.txLink);
     }
 }
-const CHUCK_SIZE = 25;
+const CHUCK_SIZE = 20;
 
 
 async function fetchDurations(dex: Dex) {
 
-    let urls: string[];
+    let txInfos: TxInfo[];
     switch (dex) {
         case "STON.FI": {
-            urls = stonfiTxs
+            txInfos = stonfiTxs
             break;
         }
         case "DEDUST": {
-            urls = dedustTxs
+            txInfos = dedustTxs
             break;
         }
         case "AYTU": {
-            urls = aytuTxs
+            txInfos = aytuTxs
             break;
         }
     }
 
-    const chunks = chunk(urls, CHUCK_SIZE);
+    const chunks = chunk(txInfos, CHUCK_SIZE);
     const start = Date.now();
-    console.log("Chunk", urls.length, "urls into", chunks.length, "chunks");
+    console.log("Chunk", txInfos.length, "urls into", chunks.length, "chunks");
 
     const fulfilled: SwapResult[] = [];
 
     for (const chunk of chunks) {
         const results = await Promise.allSettled(
-            chunk.map((url) => crawler(url, dex).catch(console.error))
+            chunk.map((info) => crawler(dex, info).catch(console.error))
         );
 
         //   save result to result.json
@@ -131,7 +133,7 @@ async function fetchDurations(dex: Dex) {
         "Crawled",
         fulfilled.length,
         "/",
-        urls.length,
+        txInfos.length,
         "urls in",
         (Date.now() - start) / 1000,
         "s"

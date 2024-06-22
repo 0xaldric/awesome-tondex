@@ -3,8 +3,8 @@ import {
 } from "@/web3/ton-connect/ton-lite-client";
 import { Address, Cell, Message, Transaction, loadTransaction } from "@ton/core";
 
-export async function scanTxHashes(account: Address, extractor: (msg: Message) => boolean) {
-    let txHashes: string[] = [];
+export async function scanTxs(account: Address, extractor: (msg: Message) => boolean) {
+    let results: Transaction[] = [];
     const info = await tonLiteClient.getMasterchainInfo();
     const accountState = await tonLiteClient.getAccountState(account, info.last)
     let lt = accountState.lastTx!.lt.toString();
@@ -15,9 +15,9 @@ export async function scanTxHashes(account: Address, extractor: (msg: Message) =
 
             const parsedTxs = Cell.fromBoc(txs.transactions).map(tx => loadTransaction(tx.beginParse()))
 
-            const newTxHashes = extractTxHashes(parsedTxs, extractor)
-            console.log(newTxHashes);
-            txHashes = [...txHashes, ...newTxHashes];
+            const newTxs = extractTxs(parsedTxs, extractor)
+            console.log(newTxs.map(tx => tx.hash().toString('hex')));
+            results = [...results, ...newTxs];
 
             const txLength = parsedTxs.length;
             if (txLength > 0) {
@@ -33,18 +33,18 @@ export async function scanTxHashes(account: Address, extractor: (msg: Message) =
         }
     }
 
-    return Array.from(new Set(txHashes));
+    return results;
 }
 
-export function extractTxHashes(txs: Transaction[], extractor: (msg: Message) => boolean): string[] {
-    let txHashes = [];
+export function extractTxs(txs: Transaction[], extractor: (msg: Message) => boolean): Transaction[] {
+    let results = [];
     for (const tx of txs) {
         for (const msg of tx.outMessages.values()) {
             if (extractor(msg)) {
-                txHashes.push(tx.hash().toString('hex'));
+                results.push(tx);
                 break;
             }
         }
     }
-    return txHashes;
+    return results;
 }
