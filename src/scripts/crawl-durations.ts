@@ -8,14 +8,15 @@ import aytuTxs from 'root/aytu-txs.json';
 import dedustTxs from 'root/dedust-txs.json';
 import stonfiTxs from 'root/stonfi-txs.json';
 import { sleep } from "@/utils";
-import { TxInfo } from "./scan-txs";
+import { TxInfo } from "@/executors/tx-scanner";
 
 type Dex = 'STON.FI' | 'DEDUST' | 'AYTU'
 export interface SwapResult {
     dex: Dex,
     txLink: string,
     timestamp: number,
-    duration: number
+    duration: number,
+    gas: number
 }
 
 const csvFilePath = path.join(__dirname, '../../results.csv');
@@ -45,7 +46,7 @@ function convertToSeconds(duration: string) {
 function appendSwapResults(swapResults: SwapResult[]): void {
     const fileExists = fs.existsSync(csvFilePath);
 
-    const header = 'DEX,Tx Link,Duration,Timestamp';
+    const header = 'DEX,Tx Link,Duration,Timestamp,Gas Fee';
     let dataToWrite = '';
 
     if (!fileExists) {
@@ -53,7 +54,7 @@ function appendSwapResults(swapResults: SwapResult[]): void {
     }
 
     swapResults.forEach(result => {
-        const record = `${result.dex},${result.txLink},${result.duration},${result.timestamp}`;
+        const record = `${result.dex},${result.txLink},${result.duration},${result.timestamp},${result.gas}`;
         dataToWrite += record + os.EOL;
     });
 
@@ -139,7 +140,7 @@ async function fetchDurations(dex: Dex) {
         "s"
     );
 
-    appendSwapResults(fulfilled);
+    appendSwapResults(fulfilled.slice(0, 1000));
 };
 
 async function main() {
